@@ -6,9 +6,13 @@
                 <input type="text" class="p-0 border-none focus:ring-0 w-full" v-model="post.slug" spellcheck="false" v-on:click="$event.target.select()">
             </div>
             <div class="flex items-center space-x-6">
-                <div>
-                    <span class="text-sm text-gray-500">Autosaved</span>
-                </div>
+                <RelativeTime :date="lastSaved" v-if="lastSaved">
+                    <template v-slot:default="{ fromNow }">
+                        <span class="text-sm text-gray-500">
+                            {{ fromNow }}
+                        </span>
+                    </template>
+                </RelativeTime>
                 <button v-on:click="post.published = !post.published" class="text-sm font-medium" :class="{ ' text-pink-500' : post.published }">
                     {{ !post.published ? 'Publish' : 'Unpublish' }}
                 </button>
@@ -42,11 +46,14 @@
 <script>
 
 import useAdminPosts from '../../api/useAdminPosts'
-import { onMounted, watch, watchEffect } from 'vue'
+import { onMounted, ref, watch, watchEffect } from 'vue'
 import ResizeTextArea from '../../components/ResizeTextArea.vue'
 import _ from 'lodash'
 import slugify from 'slugify'
 import Editor from '../../components/Editor.vue'
+import dayjs from 'dayjs'
+import RelativeTime from '../../components/RelativeTime.vue'
+
 
 export default {
     props: {
@@ -58,8 +65,11 @@ export default {
     setup(props) {
         const { post, fetchPost, patchPost } = useAdminPosts();
 
+        const lastSaved = ref(null)
+
         const updatePost = async () => {
             await patchPost(props.uuid)
+            lastSaved.value = dayjs() // Let's use relative time
         }
 
         const replaceSlug = () => {
@@ -86,9 +96,10 @@ export default {
             }, 500))
         });
         return {
-            post
+            post,
+            lastSaved
         };
     },
-    components: { ResizeTextArea, Editor }
+    components: { ResizeTextArea, Editor, RelativeTime }
 }
 </script>
